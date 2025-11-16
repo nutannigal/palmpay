@@ -90,6 +90,15 @@ export const authService = {
     }
   },
 
+  completeRegistration: async ( mobile, password ,) => {
+    try {
+      const response = await api.post('/auth/complete-registration', {  mobile, password  })
+      return response
+    } catch (error) {
+      throw error.response || { message: 'Failed to send OTP' }
+    }
+  },
+
   getOTPStatus: async (mobile) => {
     try {
       const response = await api.post('/auth/status-otp', { mobile })

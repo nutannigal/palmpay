@@ -1,59 +1,88 @@
 // src/pages/auth/ConfirmPassword.jsx
 import React, { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext' // Fixed import path
+import authService from '../../services/authService' // Fixed import name
 
 const ConfirmPassword = () => {
-  const [formData, setFormData] = useState({
-    password: '',
-    confirmPassword: ''
-  })
-  const [acceptPrivacy, setAcceptPrivacy] = useState(false)
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
+  const { completeRegistration } = useAuth()
 
-  const mobile = location.state?.mobile || '+91-XXXXXXXXXX'
+  const mobile = location.state?.mobile || ''
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setError('')
+
+    if (!password || !confirmPassword) {
+      setError('Please fill in all fields')
+      return
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long')
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
+
     setLoading(true)
-    
+
     try {
-      // Simulate password setup API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      // Use the authService for complete registration
+      const result = await authService.completeRegistration({ 
+        mobile, 
+        password, 
+        acceptPrivacy: true 
+      })
       
-      // Navigate to Merchant Dashboard
-      navigate('/admin/dashboard')
+      if (result.success) {
+        // Store user data and token
+        localStorage.setItem('token', result.data.token)
+        localStorage.setItem('user', JSON.stringify(result.data.user))
+        
+        // Since your response doesn't have a role field, we'll determine it based on other criteria
+        // For now, let's check if it's an admin by email or other criteria
+        const userEmail = result.data.user?.email || ''
+        const isAdmin = userEmail.includes('admin') || userEmail.includes('palmpay.com')
+        
+        if (isAdmin) {
+          navigate('/admin/dashboard', { 
+            state: { 
+              user: result.data.user,
+              message: 'Registration completed successfully!' 
+            } 
+          })
+        } else {
+          navigate('/merchant/dashboard', { 
+            state: { 
+              user: result.data.user,
+              message: 'Registration completed successfully!' 
+            } 
+          })
+        }
+      } else {
+        setError(result.message || 'Registration failed. Please try again.')
+      }
     } catch (error) {
-      console.error('Password setup failed:', error)
+      console.error('Registration error:', error)
+      setError(error.message || 'An unexpected error occurred. Please try again.')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleChange = (e) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }))
-  }
-
-  const isFormValid = 
-    formData.password.length >= 6 && 
-    formData.password === formData.confirmPassword && 
-    acceptPrivacy
-
-  const passwordStrength = () => {
-    const length = formData.password.length
-    if (length === 0) return { text: '', color: '' }
-    if (length < 6) return { text: 'Weak', color: 'text-red-600' }
-    if (length < 8) return { text: 'Fair', color: 'text-yellow-600' }
-    return { text: 'Strong', color: 'text-green-600' }
-  }
-
-  const strength = passwordStrength()
+  const isFormValid = password.length >= 6 && confirmPassword.length >= 6 && password === confirmPassword
 
   return (
     <div 
@@ -107,15 +136,19 @@ const ConfirmPassword = () => {
             {/* Header */}
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                Confirm Password
+                Set Your Password
               </h2>
               <p className="text-gray-600">
-                This will be your login password
-              </p>
-              <p className="font-semibold text-gray-800 mt-1 text-lg">
-                {mobile}
+                Create a secure password for your account
               </p>
             </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                {error}
+              </div>
+            )}
 
             <form className="space-y-6" onSubmit={handleSubmit}>
               {/* Password Input */}
@@ -129,10 +162,11 @@ const ConfirmPassword = () => {
                     name="password"
                     type={showPassword ? "text" : "password"}
                     required
-                    value={formData.password}
-                    onChange={handleChange}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200 bg-gray-50 pr-12"
                     placeholder="Enter your password"
+                    minLength="6"
                   />
                   <button
                     type="button"
@@ -142,11 +176,6 @@ const ConfirmPassword = () => {
                     {showPassword ? '🙈' : '👁️'}
                   </button>
                 </div>
-                {formData.password && (
-                  <p className={`mt-2 text-sm font-medium ${strength.color}`}>
-                    Password strength: {strength.text}
-                  </p>
-                )}
               </div>
 
               {/* Confirm Password Input */}
@@ -160,10 +189,11 @@ const ConfirmPassword = () => {
                     name="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
                     required
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200 bg-gray-50 pr-12"
                     placeholder="Confirm your password"
+                    minLength="6"
                   />
                   <button
                     type="button"
@@ -173,33 +203,14 @@ const ConfirmPassword = () => {
                     {showConfirmPassword ? '🙈' : '👁️'}
                   </button>
                 </div>
-                {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                  <p className="mt-2 text-sm text-red-600 font-medium">
-                    Passwords do not match
-                  </p>
-                )}
               </div>
 
-              {/* Privacy Policy Checkbox */}
-              <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <input
-                  id="privacy-policy"
-                  name="privacy-policy"
-                  type="checkbox"
-                  required
-                  checked={acceptPrivacy}
-                  onChange={(e) => setAcceptPrivacy(e.target.checked)}
-                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded mt-1"
-                />
-                <label htmlFor="privacy-policy" className="text-sm text-gray-700">
-                  I agree to the{' '}
-                  <a href="/privacy" className="text-purple-600 hover:text-purple-500 font-medium">
-                    Privacy Policy
-                  </a>
-                </label>
+              {/* Password Requirements */}
+              <div className="text-sm text-gray-600">
+                <p>Password must be at least 6 characters long</p>
               </div>
 
-              {/* Next Button with Gradient */}
+              {/* Complete Registration Button */}
               <button
                 type="submit"
                 disabled={loading || !isFormValid}
@@ -222,24 +233,21 @@ const ConfirmPassword = () => {
                 {loading ? (
                   <div className="flex items-center justify-center">
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                    Setting up...
+                    Completing Registration...
                   </div>
                 ) : (
-                  'Next'
+                  'Complete Registration'
                 )}
               </button>
 
               {/* Back Link */}
-              <div className="text-center pt-2">
+              <div className="text-center pt-4">
                 <button
                   type="button"
                   onClick={() => navigate(-1)}
-                  className="text-purple-600 hover:text-purple-700 font-medium transition-colors duration-200 flex items-center justify-center space-x-2 mx-auto"
+                  className="text-purple-600 hover:text-purple-700 font-medium transition-colors duration-200"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                  </svg>
-                  <span>Back to OTP verification</span>
+                  Back to OTP Verification
                 </button>
               </div>
             </form>

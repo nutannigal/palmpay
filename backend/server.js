@@ -140,21 +140,7 @@ app.post('/api/auth/verify-otp', (req, res) => {
 
 // 5. Complete Registration
 app.post('/api/auth/complete-registration', (req, res) => {
-  const { mobile, password, confirmPassword } = req.body;
-
-  if (!mobile || !password || !confirmPassword) {
-    return res.status(400).json({
-      success: false,
-      message: 'All fields are required'
-    });
-  }
-
-  if (password !== confirmPassword) {
-    return res.status(400).json({
-      success: false,
-      message: 'Passwords do not match'
-    });
-  }
+  const { mobile, password  } = req.body;
 
   if (password.length < 6) {
     return res.status(400).json({
