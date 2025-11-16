@@ -1,15 +1,11 @@
-// src/context/AuthContext.js
 import React, { useState, useContext, createContext, useEffect } from 'react';
 
-// Create Auth Context
 const AuthContext = createContext();
 
-// Auth Provider Component
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Check if user is logged in on app start
   useEffect(() => {
     checkAuth();
   }, []);
@@ -28,7 +24,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Mobile login function
   const mobileLogin = async (mobile, password) => {
     setLoading(true);
     try {
@@ -58,7 +53,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Verify OTP function
   const verifyOTP = async (mobile, otp, purpose = 'registration') => {
     try {
       const response = await fetch('http://localhost:5000/api/otp/verify', {
@@ -81,7 +75,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Complete registration function
   const completeRegistration = async (mobile, password, acceptPrivacy = true) => {
     try {
       const response = await fetch('http://localhost:5000/api/auth/complete-registration', {
@@ -104,7 +97,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Logout function
   const logout = () => {
     setUser(null);
     localStorage.removeItem('token');
@@ -124,7 +116,6 @@ export const AuthProvider = ({ children }) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// useAuth Hook - export this from the same file
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

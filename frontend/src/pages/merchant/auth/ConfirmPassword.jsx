@@ -25,12 +25,7 @@ const ConfirmPassword = () => {
       await new Promise(resolve => setTimeout(resolve, 1500))
       
       // Navigate to Merchant Dashboard
-      navigate('/admin/dashboard', { 
-        state: { 
-          message: 'Registration completed successfully! Welcome to your dashboard.',
-          mobile: mobile
-        } 
-      })
+      navigate('/admin/dashboard')
     } catch (error) {
       console.error('Password setup failed:', error)
     } finally {

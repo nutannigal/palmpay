@@ -1,9 +1,9 @@
-// src/pages/auth/UsernameLogin.jsx
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../../hooks/useAuth'
+import useAuth from '../../../context/AuthContext'
+// import { useAuth } from '../../context/AuthContext'
 
-const UserLogin = () => {
+const UsernameLogin = () => {
   const [formData, setFormData] = useState({
     mobile: '',
     password: ''
@@ -11,25 +11,36 @@ const UserLogin = () => {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
+  const [error, setError] = useState('')
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const { mobileLogin } = useAuth()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
+    setError('')
     
     try {
-      // Simulate login API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      const result = await mobileLogin(formData.mobile, formData.password)
       
-      // For demo, navigate to MobileEntry
-      navigate('/mobile-entry', { 
-        state: { 
-          mobile: formData.mobile
-        } 
-      })
+      if (result.success) {
+        // Login successful - navigate to mobile-entry
+        console.log('Login successful:', result.data.user)
+        
+        // Navigate to mobile-entry with user data
+        navigate('/mobile-entry', { 
+          state: { 
+            user: result.data.user,
+            token: result.data.token
+          } 
+        })
+      } else {
+        // Login failed - show error
+        setError(result.message || 'Login failed. Please try again.')
+      }
     } catch (error) {
       console.error('Login error:', error)
+      setError('An unexpected error occurred. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -40,9 +51,11 @@ const UserLogin = () => {
       ...prev,
       [e.target.name]: e.target.value
     }))
+    // Clear error when user starts typing
+    if (error) setError('')
   }
 
-  const isFormValid = formData.mobile.length === 10 && formData.password.length > 0
+  const isFormValid = formData.mobile.length === 10 && formData.password.length >= 6
 
   return (
     <div 
@@ -103,6 +116,13 @@ const UserLogin = () => {
               </p>
             </div>
 
+            {/* Error Message */}
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                {error}
+              </div>
+            )}
+
             <form className="space-y-6" onSubmit={handleSubmit}>
               {/* Mobile Number Input */}
               <div>
@@ -145,6 +165,7 @@ const UserLogin = () => {
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200 bg-gray-50 pr-12"
                     placeholder="Enter your password"
+                    minLength="6"
                   />
                   <button
                     type="button"
@@ -198,7 +219,6 @@ const UserLogin = () => {
                   e.target.style.transform = 'translateY(0)'
                   e.target.style.boxShadow = '0 4px 15px rgba(6, 82, 197, 0.4)'
                 }}
-                
               >
                 {loading ? (
                   <div className="flex items-center justify-center">
@@ -238,4 +258,4 @@ const UserLogin = () => {
   )
 }
 
-export default UserLogin
+export default UsernameLogin

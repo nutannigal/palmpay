@@ -87,6 +87,28 @@ app.post('/api/auth/send-otp', (req, res) => {
   });
 });
 
+app.post('/api/auth/status-otp', (req, res) => {
+  const { mobile } = req.body;
+
+  if (!mobile) {
+    return res.status(400).json({
+      success: false,
+      message: 'Mobile number is required'
+    });
+  }
+
+  user
+
+ 
+  res.json({
+    success: true,
+    message: 'OTP status ',
+    data: {
+      status
+    }
+  });
+});
+
 // 4. Verify OTP
 app.post('/api/auth/verify-otp', (req, res) => {
   const { mobile, otp } = req.body;

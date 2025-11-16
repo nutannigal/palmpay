@@ -63,12 +63,20 @@ export const authService = {
   },
 
   // Verify OTP
-  verifyOTP: async (mobile, otp) => {
+  verifyOTP: async (mobile, otp ) => {
     try {
-      const response = await api.post('/auth/verify-otp', { mobile, otp })
-      return response.data
+      const response = await api.post('auth/verify-otp', {
+        mobile, otp
+      });
+
+      return response;
     } catch (error) {
-      throw error.response?.data || { message: 'OTP verification failed' }
+      console.error('Verify OTP error:', error);
+      return {
+        success: false,
+        message: 'Network error. Please try again.',
+        code: 'NETWORK_ERROR'
+      };
     }
   },
 
@@ -76,6 +84,15 @@ export const authService = {
   sendOTP: async (mobile) => {
     try {
       const response = await api.post('/auth/send-otp', { mobile })
+      return response.data
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to send OTP' }
+    }
+  },
+
+  getOTPStatus: async (mobile) => {
+    try {
+      const response = await api.post('/auth/status-otp', { mobile })
       return response.data
     } catch (error) {
       throw error.response?.data || { message: 'Failed to send OTP' }

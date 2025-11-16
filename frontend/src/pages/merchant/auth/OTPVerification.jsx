@@ -1,7 +1,9 @@
 // src/pages/auth/OTPVerification.jsx
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useAuth } from '../../../hooks/useAuth'
+// import { useAuth } from '../../context/AuthContext' // Fixed import path
+import authService from '../../../services/authService' // Fixed import name
+import useAuth from '../../../context/AuthContext'
 
 const OTPVerification = () => {
   const [otp, setOtp] = useState(['', '', '', '', '', ''])
@@ -12,27 +14,13 @@ const OTPVerification = () => {
   const inputRefs = useRef([])
   const navigate = useNavigate()
   const location = useLocation()
-  const { verifyOTP, resendOTP, getOTPStatus } = useAuth()
+  const { verifyOTP, resendOTP } = useAuth() // Fixed: added verifyOTP
 
   const mobile = location.state?.mobile || ''
   const purpose = location.state?.purpose || 'registration'
-  const debugOtp = location.state?.debugOtp
 
   useEffect(() => {
-    // Initialize timer and check OTP status
-    const initializeOTP = async () => {
-      if (mobile) {
-        const status = await getOTPStatus(mobile, purpose);
-        if (status.success) {
-          const timeLeft = Math.max(0, Math.ceil((new Date(status.data.expiresAt) - new Date()) / 1000));
-          setTimer(timeLeft);
-          setRemainingAttempts(status.data.maxAttempts - status.data.attempts);
-        }
-      }
-    };
-
-    initializeOTP();
-
+    // Simple timer countdown
     const countdown = setInterval(() => {
       setTimer(prev => {
         if (prev <= 1) {
@@ -44,7 +32,7 @@ const OTPVerification = () => {
     }, 1000)
 
     return () => clearInterval(countdown)
-  }, [mobile, purpose, getOTPStatus])
+  }, []) // Removed dependencies
 
   const handleOtpChange = (index, value) => {
     if (value.length <= 1 && /^\d*$/.test(value)) {
@@ -83,7 +71,8 @@ const OTPVerification = () => {
     setError('')
     
     try {
-      const result = await verifyOTP(mobile, otpString, purpose)
+      // Use authService for OTP verification
+      const result = await authService.verifyOTP(mobile, otpString, purpose)
       
       if (result.success) {
         // Handle successful verification based on purpose
@@ -141,6 +130,7 @@ const OTPVerification = () => {
     setLoading(true)
     
     try {
+      // Use the resendOTP function from AuthContext
       const result = await resendOTP(mobile, purpose)
       
       if (result.success) {
@@ -152,11 +142,6 @@ const OTPVerification = () => {
         // Show success message
         setError('OTP sent successfully!')
         setTimeout(() => setError(''), 3000)
-        
-        // In development, show the OTP for testing
-        if (process.env.NODE_ENV === 'development' && result.data.otp) {
-          console.log('New OTP:', result.data.otp)
-        }
       } else {
         setError(result.message)
         if (result.data?.retryAfter) {
@@ -244,15 +229,6 @@ const OTPVerification = () => {
               <p className="font-semibold text-gray-800 mt-1 text-lg">
                 +91 {mobile}
               </p>
-              
-              {/* Debug OTP in development */}
-              {process.env.NODE_ENV === 'development' && debugOtp && (
-                <div className="mt-2 p-2 bg-yellow-100 border border-yellow-400 rounded">
-                  <p className="text-yellow-800 text-sm">
-                    <strong>Development OTP:</strong> {debugOtp}
-                  </p>
-                </div>
-              )}
             </div>
 
             {/* Error/Success Message */}

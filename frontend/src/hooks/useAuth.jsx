@@ -57,28 +57,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Verify OTP function
-  const verifyOTP = async (mobile, otp, purpose = 'registration') => {
-    try {
-      const response = await fetch('http://localhost:5000/api/otp/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ mobile, otp, purpose }),
-      });
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Verify OTP error:', error);
-      return { 
-        success: false, 
-        message: 'Network error. Please try again.',
-        code: 'NETWORK_ERROR'
-      };
-    }
-  };
-
+ 
   // Complete registration function
   const completeRegistration = async (mobile, password, acceptPrivacy = true) => {
     try {
